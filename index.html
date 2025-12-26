@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>彩蝶宝宝抽奖页面</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #ffccd5, #ffb6c1);
+            font-family: 'Microsoft YaHei', sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #ff4081;
+            margin-bottom: 20px;
+        }
+        .prize-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 30px 0;
+        }
+        .prize-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .prize-item.selected {
+            background: #ffd166;
+            transform: scale(1.05);
+        }
+        button {
+            background: #ff4081;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .results {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            min-height: 100px;
+        }
+        .rules {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: left;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎁 彩蝶宝宝会选到什么呢 🎁</h1>
+        <p>一共5次抽奖机会，祝你好运！</p>
+        
+        <div style="margin: 20px 0; font-size: 18px;">
+            当前抽奖: <span id="round">0</span>/5
+        </div>
+        
+        <div class="prize-grid" id="prizeGrid"></div>
+        
+        <div>
+            <button onclick="startDraw()" id="drawBtn">开始抽奖</button>
+            <button onclick="resetGame()">重新开始</button>
+        </div>
+        
+        <div class="results" id="results">
+            <h3>抽奖结果</h3>
+            <div id="resultList"></div>
+        </div>
+        
+        <div class="rules">
+            <h3>📝 抽奖规则</h3>
+            <ul>
+                <li>第1次：必须是<strong>小蛋糕</strong>或<strong>66元红包</strong></li>
+                <li>第2次：必须是<strong>小蛋糕</strong>或<strong>66元红包</strong>，且不能与第1次相同</li>
+                <li>第3-5次：随机抽取剩余奖品</li>
+                <li>每次抽奖后，已抽中奖品会从奖池移除</li>
+            </ul>
+        </div>
+        
+        <div style="margin-top: 30px; padding: 15px; background: #e8f5e9; border-radius: 10px;">
+            <h3>🔗 你的抽奖链接</h3>
+            <p>完成设置后，在仓库的Settings → Pages里获取链接</p>
+        </div>
+    </div>
+
+    <script>
+        const prizes = [
+            "头戴耳机", "围巾", "小蛋糕", "项链",
+            "马小纺同款小水杯", "66元红包哦", "奶茶一杯哦", "啥也没有哦"
+        ];
+        
+        let availablePrizes = [...prizes];
+        let selectedPrizes = [];
+        let currentRound = 0;
+        
+        function init() {
+            const grid = document.getElementById('prizeGrid');
+            grid.innerHTML = '';
+            availablePrizes.forEach((prize, index) => {
+                const div = document.createElement('div');
+                div.className = 'prize-item';
+                div.id = `prize${index}`;
+                div.innerHTML = prize;
+                grid.appendChild(div);
+            });
+            updateDisplay();
+        }
+        
+        function startDraw() {
+            if (currentRound >= 5) return;
+            
+            let possiblePrizes = [];
+            if (currentRound === 0) {
+                possiblePrizes = availablePrizes.filter(p => p === "小蛋糕" || p === "66元红包哦");
+            } else if (currentRound === 1) {
+                possiblePrizes = availablePrizes.filter(p => 
+                    (p === "小蛋糕" || p === "66元红包哦") && p !== selectedPrizes[0]
+                );
+            } else {
+                possiblePrizes = availablePrizes;
+            }
+            
+            if (possiblePrizes.length === 0) {
+                alert("没有可选的奖品了！");
+                return;
+            }
+            
+            // 抽奖动画
+            let count = 0;
+            const interval = setInterval(() => {
+                document.querySelectorAll('.prize-item').forEach(item => {
+                    item.classList.remove('selected');
+                });
+                const randomIndex = Math.floor(Math.random() * document.querySelectorAll('.prize-item').length);
+                document.querySelectorAll('.prize-item')[randomIndex].classList.add('selected');
+                count++;
+                
+                if (count > 15) {
+                    clearInterval(interval);
+                    const selected = possiblePrizes[Math.floor(Math.random() * possiblePrizes.length)];
+                    
+                    // 显示最终结果
+                    document.querySelectorAll('.prize-item').forEach(item => {
+                        item.classList.remove('selected');
+                        if (item.innerHTML === selected) {
+                            item.classList.add('selected');
+                        }
+                    });
+                    
+                    // 更新数据
+                    selectedPrizes.push(selected);
+                    availablePrizes = availablePrizes.filter(p => p !== selected);
+                    currentRound++;
+                    
+                    updateDisplay();
+                    
+                    if (currentRound >= 5) {
+                        document.getElementById('drawBtn').disabled = true;
+                        setTimeout(() => {
+                            alert("🎉 抽奖完成！\n\n" + 
+                                  selectedPrizes.map((p, i) => `第${i+1}次：${p}`).join('\n') +
+                                  "\n\n感谢参与！");
+                        }, 500);
+                    }
+                }
+            }, 100);
+        }
+        
+        function resetGame() {
+            availablePrizes = [...prizes];
+            selectedPrizes = [];
+            currentRound = 0;
+            document.getElementById('drawBtn').disabled = false;
+            init();
+        }
+        
+        function updateDisplay() {
+            document.getElementById('round').textContent = currentRound;
+            const resultList = document.getElementById('resultList');
+            resultList.innerHTML = selectedPrizes.map((p, i) => 
+                `<div style="padding: 8px; margin: 5px; background: white; border-radius: 5px;">
+                    第${i+1}次：<strong>${p}</strong>
+                </div>`
+            ).join('') || '<p>还没有抽奖结果</p>';
+        }
+        
+        // 初始化
+        window.onload = init;
+    </script>
+</body>
+</html>
