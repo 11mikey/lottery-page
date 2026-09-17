@@ -1,200 +1,261 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>彩蝶宝宝抽奖页面</title>
-    <style>
-        body {
-            background: linear-gradient(135deg, #ffccd5, #ffb6c1);
-            font-family: 'Microsoft YaHei', sans-serif;
-            text-align: center;
-            padding: 20px;
-        }
-        .container {
-            background: white;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        h1 {
-            color: #ff4081;
-            margin-bottom: 20px;
-        }
-        .prize-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin: 30px 0;
-        }
-        .prize-item {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        .prize-item.selected {
-            background: #ffd166;
-            transform: scale(1.05);
-        }
-        button {
-            background: #ff4081;
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            font-size: 18px;
-            border-radius: 25px;
-            cursor: pointer;
-            margin: 10px;
-        }
-        .results {
-            background: #f9f9f9;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-            min-height: 100px;
-        }
-        .rules {
-            background: #e3f2fd;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: left;
-            margin-top: 20px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>马小纺牌穿越</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: radial-gradient(circle at 50% 0%, #1a0a0a, #020402 70%);
+    color: #7CFF7C;
+    font-family: Consolas, "Courier New", monospace;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(0,255,0,0.03) 0 1px,
+      transparent 1px 3px
+    );
+    z-index: 999;
+  }
+  .box {
+    width: min(700px, 92vw);
+    border: 2px solid #2bff2b;
+    padding: 24px;
+    margin: 24px 0;
+    box-shadow: 0 0 30px #0f0, inset 0 0 20px rgba(0,255,0,0.1);
+    background: rgba(7,16,7,0.92);
+    position: relative;
+  }
+  h1 { margin: 0 0 6px; font-size: clamp(20px, 5vw, 26px); text-shadow: 0 0 8px #0f0; }
+  .sub { color: #ff6b6b; font-size: 13px; margin: 0 0 18px; }
+  button {
+    background: #2bff2b;
+    color: #000;
+    border: 0;
+    padding: 11px 20px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 15px;
+    margin: 6px 8px 0 0;
+    transition: 0.15s;
+  }
+  button:hover { background: #b6ffb6; box-shadow: 0 0 14px #0f0; }
+  button:disabled { background: #1a4d1a; color: #4a8a4a; cursor: wait; }
+  #screen { margin-top: 16px; }
+  .q { margin: 16px 0 4px; font-size: clamp(16px, 4vw, 19px); line-height: 1.6; text-shadow: 0 0 6px rgba(0,255,0,0.5); }
+  .answer {
+    display: none;
+    margin-top: 14px;
+    color: #ffdf6b;
+    border: 1px dashed #ffdf6b;
+    padding: 14px;
+    line-height: 1.7;
+    animation: pop 0.3s ease;
+  }
+  @keyframes pop { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+  .roast { color: #ff6b6b; font-size: 13px; margin: 10px 0; }
+  .bar { height: 14px; border: 1px solid #2bff2b; margin: 14px 0; overflow: hidden; }
+  .bar > i { display: block; height: 100%; width: 0; background: #2bff2b; box-shadow: 0 0 10px #0f0; transition: width 0.3s; }
+  .log { font-size: 13px; color: #4fbf4f; line-height: 1.7; min-height: 20px; }
+  .footer { margin-top: 18px; font-size: 11px; color: #2f7a2f; text-align: center; }
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎁 彩蝶宝宝会选到什么呢 🎁</h1>
-        <p>一共5次抽奖机会，祝你好运！</p>
-        
-        <div style="margin: 20px 0; font-size: 18px;">
-            当前抽奖: <span id="round">0</span>/5
-        </div>
-        
-        <div class="prize-grid" id="prizeGrid"></div>
-        
-        <div>
-            <button onclick="startDraw()" id="drawBtn">开始抽奖</button>
-            <button onclick="resetGame()">重新开始</button>
-        </div>
-        
-        <div class="results" id="results">
-            <h3>抽奖结果</h3>
-            <div id="resultList"></div>
-        </div>
-        
-        <div style="margin-top: 30px; padding: 15px; background: #e8f5e9; border-radius: 10px;">
-            <h3>🔗 你的抽奖链接</h3>
-            <p>完成设置后，在仓库的Settings → Pages里获取链接</p>
-        </div>
-    </div>
+<div class="box">
+  <h1>⏳ 马小纺牌穿越</h1>
+  <p class="sub">警告：马小纺牌时光机，三无产品，漏电不保修，穿丢概不负责。</p>
+  
+  <div style="margin-bottom: 12px;">
+    <button id="go">启动穿越</button>
+  </div>
 
-    <script>
-        const prizes = [
-            "头戴耳机", "围巾", "小蛋糕", "项链",
-            "马小纺同款小水杯", "66元红包哦", "奶茶一杯哦", "啥也没有哦"
-        ];
-        
-        let availablePrizes = [...prizes];
-        let selectedPrizes = [];
-        let currentRound = 0;
-        
-        function init() {
-            const grid = document.getElementById('prizeGrid');
-            grid.innerHTML = '';
-            availablePrizes.forEach((prize, index) => {
-                const div = document.createElement('div');
-                div.className = 'prize-item';
-                div.id = `prize${index}`;
-                div.innerHTML = prize;
-                grid.appendChild(div);
-            });
-            updateDisplay();
-        }
-        
-        function startDraw() {
-            if (currentRound >= 5) return;
-            
-            let possiblePrizes = [];
-            if (currentRound === 0) {
-                possiblePrizes = availablePrizes.filter(p => p === "小蛋糕" || p === "66元红包哦");
-            } else if (currentRound === 1) {
-                possiblePrizes = availablePrizes.filter(p => 
-                    (p === "小蛋糕" || p === "66元红包哦") && p !== selectedPrizes[0]
-                );
-            } else {
-                possiblePrizes = availablePrizes;
-            }
-            
-            if (possiblePrizes.length === 0) {
-                alert("没有可选的奖品了！");
-                return;
-            }
-            
-            // 抽奖动画
-            let count = 0;
-            const interval = setInterval(() => {
-                document.querySelectorAll('.prize-item').forEach(item => {
-                    item.classList.remove('selected');
-                });
-                const randomIndex = Math.floor(Math.random() * document.querySelectorAll('.prize-item').length);
-                document.querySelectorAll('.prize-item')[randomIndex].classList.add('selected');
-                count++;
-                
-                if (count > 15) {
-                    clearInterval(interval);
-                    const selected = possiblePrizes[Math.floor(Math.random() * possiblePrizes.length)];
-                    
-                    // 显示最终结果
-                    document.querySelectorAll('.prize-item').forEach(item => {
-                        item.classList.remove('selected');
-                        if (item.innerHTML === selected) {
-                            item.classList.add('selected');
-                        }
-                    });
-                    
-                    // 更新数据
-                    selectedPrizes.push(selected);
-                    availablePrizes = availablePrizes.filter(p => p !== selected);
-                    currentRound++;
-                    
-                    updateDisplay();
-                    
-                    if (currentRound >= 5) {
-                        document.getElementById('drawBtn').disabled = true;
-                        setTimeout(() => {
-                            alert("🎉 抽奖完成！\n\n" + 
-                                  selectedPrizes.map((p, i) => `第${i+1}次：${p}`).join('\n') +
-                                  "\n\n感谢参与！");
-                        }, 500);
-                    }
-                }
-            }, 100);
-        }
-        
-        function resetGame() {
-            availablePrizes = [...prizes];
-            selectedPrizes = [];
-            currentRound = 0;
-            document.getElementById('drawBtn').disabled = false;
-            init();
-        }
-        
-        function updateDisplay() {
-            document.getElementById('round').textContent = currentRound;
-            const resultList = document.getElementById('resultList');
-            resultList.innerHTML = selectedPrizes.map((p, i) => 
-                `<div style="padding: 8px; margin: 5px; background: white; border-radius: 5px;">
-                    第${i+1}次：<strong>${p}</strong>
-                </div>`
-            ).join('') || '<p>还没有抽奖结果</p>';
-        }
-        
-        // 初始化
-        window.onload = init;
-    </script>
+  <div id="screen"></div>
+  <div class="footer">马小纺牌穿越 · 本机器不对任何人的人生负责</div>
+</div>
+
+<script>
+// 劣质时光机专属故障日志
+const steps = [
+  "正在启动马小纺牌时光机……",
+  "正在给电池充电……警告：电池已鼓包！",
+  "正在扫码支付穿越费……余额不足，已为您开通花呗。",
+  "正在播放 30 秒开屏广告……（无法跳过）",
+  "正在给爱因斯坦发微信……对方已读不回。",
+  "正在绕过时空管理局……失败，已通知你妈。",
+  "正在压缩宇宙……进度99%……卡住了，拍一拍。",
+  "穿梭完成，请检查你还在不在。"
+];
+
+// 常规题库（已剔除“99%时光机”和“第二只乌龟”，保证其他题目随机不重复）
+const riddles = [
+  { q: "做鸡蛋面的老板是谁？", a: "西红柿（西红柿炒鸡蛋）" },
+  { q: "最不听话的人是谁？", a: "聋子" },
+  { q: "一只乌龟掉进山崖里（猜一花名？）", a: "玫瑰（没龟）" }, // 第一只乌龟在这里
+  { q: "小白加小白等于什么？", a: "小白兔（two）" },
+  { q: "什么蛋中看不中吃？", a: "脸蛋" },
+  { q: "哪种水果视力特别差？", a: "芒果" },
+  { q: "麒麟飞到北极会变成什么？", a: "冰淇淋" },
+  { q: "别人请你吃什么需要你自己花钱？", a: "吃官司" },
+  { q: "大象的左耳朵像什么？", a: "右耳朵" },
+  { q: "什么东西力气再大也不愿意抗？", a: "罪名" },
+  { q: "什么东西只能加不能减？", a: "年龄" },
+  { q: "什么布不能做衣服？", a: "瀑布" },
+  { q: "时钟敲了十三下该怎么做？", a: "修理它" },
+  { q: "怎么让猪不要飞走？", a: "插上翅膀（插翅难飞）" },
+  { q: "回到三国怎么一句话出名？", a: "对关羽说：你脸这么红，是不是在背着我用花呗？" },
+  { q: "穿越到恐龙时代第一句说什么？", a: "“请问你们这里交社保吗？” 恐龙没听懂，但把你踩扁了。" }
+];
+
+// 独立出来的“第二只乌龟”和“99%时光机”
+const secondTurtleRiddle = { q: "又一只乌龟掉进山崖（猜一花名）？", a: "野玫瑰（也没龟）" };
+const earlyRiddle = { q: "为什么马小纺牌时光机总卡在99%？", a: "因为它在等你看广告，而且最后5秒无法跳过，还要分享到3个群。" };
+
+// 毒舌吐槽
+const roasts = [
+  "时间守门员：就你这智商，穿回去也是给过去的你添堵。",
+  "时空管理局：检测到你想改变命运，命运说它不想被你改，并向你吐了口痰。",
+  "马小纺牌客服：亲，您的时光机漏电是正常现象哦，建议穿个绝缘鞋再试呢。",
+  "过去的你：别过来！我还没洗头，也没钱请你吃饭！",
+  "未来的你：别回来！我好不容易才把房贷还完，你一回来又要多张嘴吃饭。",
+  "系统提示：时间裂缝说——你礼貌吗？你当这是公共厕所想进就进？",
+  "正在联系过去的你……对方正在摆烂，并给你发了一个“已读不回”。",
+  "检测到你的精神状态不适合穿越，建议留在原地继续当社畜。"
+];
+
+// ================== 核心抽题逻辑 ==================
+let riddlePool = [];
+let forcedNextRiddle = null; // 强制下一题（乌龟连体专属）
+let drawCount = 0;           // 记录已经抽了多少题
+let earlyRiddleDrawn = false; // 记录“99%时光机”是否已经出场
+// 在 0、1、2 中随机一个位置，保证“99%时光机”在前三次中必出
+let earlyRiddleTargetIndex = Math.floor(Math.random() * 3); 
+
+function drawRiddle() {
+  // 1. 【最高优先级】乌龟连体机制：如果有强制下一题，直接返回
+  if (forcedNextRiddle) {
+    const r = forcedNextRiddle;
+    forcedNextRiddle = null;
+    drawCount++;
+    return r;
+  }
+
+  // 2. 【保底机制】确保“99%时光机”在前三次出现
+  // 如果还没出，且（当前到了随机指定的位置 或 已经是第三次兜底），直接出
+  if (!earlyRiddleDrawn && (drawCount === earlyRiddleTargetIndex || drawCount === 2)) {
+    earlyRiddleDrawn = true;
+    drawCount++;
+    return earlyRiddle;
+  }
+
+  // 3. 常规抽题
+  if (riddlePool.length === 0) {
+    riddlePool = [...riddles];
+    // Fisher-Yates 洗牌算法
+    for (let i = riddlePool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [riddlePool[i], riddlePool[j]] = [riddlePool[j], riddlePool[i]];
+    }
+  }
+  const r = riddlePool.pop();
+
+  // 4. 乌龟连体特判：如果抽到了“第一只乌龟”，立刻锁定“第二只乌龟”
+  if (r.q === "一只乌龟掉进山崖里（猜一花名？）") {
+    forcedNextRiddle = secondTurtleRiddle;
+  }
+
+  drawCount++;
+  return r;
+}
+
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+let ctx;
+function beep(type) {
+  try {
+    ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    const t = ctx.currentTime;
+    if (type === "tick") {
+      o.type = "square"; o.frequency.setValueAtTime(880, t);
+      g.gain.setValueAtTime(0.05, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+      o.start(t); o.stop(t + 0.07);
+    } else if (type === "warp") {
+      o.type = "sawtooth";
+      o.frequency.setValueAtTime(120, t);
+      o.frequency.exponentialRampToValueAtTime(1400, t + 0.6);
+      g.gain.setValueAtTime(0.06, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+      o.start(t); o.stop(t + 0.72);
+    } else if (type === "boom") {
+      o.type = "triangle";
+      o.frequency.setValueAtTime(300, t);
+      o.frequency.exponentialRampToValueAtTime(60, t + 0.3);
+      g.gain.setValueAtTime(0.08, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+      o.start(t); o.stop(t + 0.36);
+    }
+  } catch (e) {}
+}
+
+const screen = document.getElementById("screen");
+const goBtn = document.getElementById("go");
+
+goBtn.onclick = async () => {
+  goBtn.disabled = true;
+  beep("warp");
+  screen.innerHTML = `
+    <div class="bar"><i id="bar"></i></div>
+    <div class="log" id="log"></div>
+  `;
+  const bar = document.getElementById("bar");
+  const log = document.getElementById("log");
+
+  for (let i = 0; i < steps.length; i++) {
+    log.innerHTML += `<div>${steps[i]}</div>`;
+    bar.style.width = Math.min(99, (i + 1) / steps.length * 100) + "%";
+    beep("tick");
+    await sleep(400);
+  }
+
+  bar.style.width = "100%";
+  beep("boom");
+  await sleep(250);
+
+  const r = drawRiddle();
+  const roast = pick(roasts);
+
+  screen.innerHTML = `
+    <div class="roast">${roast}</div>
+    <div class="q">${r.q}</div>
+    <button id="ans">看答案（我猜你猜不到）</button>
+    <div class="answer" id="answerBox">
+      <strong>答案是：</strong>${r.a}
+    </div>
+  `;
+
+  document.getElementById("ans").onclick = () => {
+    beep("tick");
+    document.getElementById("answerBox").style.display = "block";
+    document.getElementById("ans").style.display = "none";
+    goBtn.disabled = false; // 看完答案之后才能再点启动
+  };
+};
+</script>
 </body>
 </html>
